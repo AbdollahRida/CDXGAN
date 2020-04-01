@@ -17,7 +17,7 @@ def argsparser():
     parser.add_argument('--log_dir', type=str, default='logs/train/')
     parser.add_argument('--eval_log_dir', type=str, default='logs/eval/')
     # Dataset
-    parser.add_argument('--dataset', choices=['LSTM', 'CDX'], default='CDX')  # 'Nottingham')
+    parser.add_argument('--dataset', choices=['LSTM', 'CDX'], default='LSTM')  # 'Nottingham')
     parser.add_argument('--batch_size', type=int, default=32)
     # SeqGAN
     # Generator
