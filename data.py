@@ -124,10 +124,8 @@ class CDXDataloader(Dataloader):
 
         #self.sentences = np.array(positive_examples)
         dataset = np.array(positive_examples)
-        print(dataset)
+        #print(dataset)
         self.dataset = dataset
-        #print('Dataset: ', dataset)
-        #print('Size: ', dataset.size)
         self.N = len(dataset)
         given_tokens = tf.placeholder(
             tf.int32, shape=[seq_len], name='given_tokens')
@@ -141,22 +139,13 @@ class CDXDataloader(Dataloader):
             start = np.random.randint(song.shape[0]-self.seq_len)
             x.append(song[start:start+self.seq_len])
         x = np.array(x)
+        #print(x)
         return x
 
     def evaluate(self, fake_seqs, iteration=None):
-        nlls = 0.
-        nb_batch = len(fake_seqs)
-        for i in range(nb_batch):
-            nlls += self.nll.eval({
-                self.given_tokens: fake_seqs[i:
-                                             (i+1)]})
-        nll = nlls/nb_batch
-        print('nll:', nll)
-
-        self.writer.add_summary(
-                tf.Summary(value=[
-                    tf.Summary.Value(tag='nll', simple_value=nll),]),
-                iteration)
+        #print(fake_seqs)
+        #for i in fake_seqs:
+        np.savetxt("data/generated.txt", fake_seqs, fmt="%s")
 
     def export(self, args):
         args.seq_len = self.seq_len
