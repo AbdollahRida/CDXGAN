@@ -31,6 +31,77 @@ class Dataloader(object):
         # configurations to it
         pass
 
+
+class NottinghamDataloader(Dataloader):
+    def __init__(self, seq_len=30, vocab_size=88, start_token=0):
+        import pretty_midi
+        if not os.path.exists('data/Nottingham/'):
+            raise Exception("Please download Nottingham dataset(http://www-labs.iro.umontreal.ca/~lisa/deep/data/Nottingham.zip) and unzip it to `data/Nottingham/`.")
+
+        self.seq_len = seq_len
+        self.vocab_size = vocab_size
+        self.start_token = start_token
+
+        dataset = np.array([
+            np.clip(pretty_midi.
+                    PrettyMIDI('data/Nottingham/train/'+fn).
+                    get_piano_roll(1/.4).argmax(0)-20, 0, 87)
+            for fn in os.listdir('data/Nottingham/train/')
+        ])
+        #print(dataset)
+        #dataset = np.array(filter(lambda x: len(x) > seq_len, dataset))
+        dataset = np.array([item for item in dataset if len(item) > seq_len])
+        self.dataset = dataset
+        #print('Dataset: ', dataset)
+        #print('Size: ', dataset.size)
+        self.N = len(dataset)
+
+    def sample(self, batch_size):
+        x = []
+        for i in range(batch_size):
+            ind = np.random.randint(self.N)
+            song = self.dataset[ind]
+            start = np.random.randint(song.shape[0]-self.seq_len)
+            x.append(song[start:start+self.seq_len])
+        x = np.array(x)
+        return x
+
+    def evaluate(self, fake_seqs, iteration=None):
+        if iteration % 100 == 0:
+            # generate a midi file from sequences every 100 iteartions
+            import pretty_midi
+            song = pretty_midi.PrettyMIDI()
+            piano_program = pretty_midi.\
+                instrument_name_to_program('Acoustic Grand Piano')
+            piano = pretty_midi.Instrument(program=piano_program)
+
+            span = .2
+            last_note = None
+            for song_ind, fake_seq in enumerate(fake_seqs):
+                for ind, note in enumerate(fake_seq):
+                    if note == 0:
+                        continue
+                    if note == last_note:
+                        start = piano.notes.pop(-1).start
+                    else:
+                        start = ind*span
+                    note = pretty_midi.Note(
+                        velocity=100, pitch=note+19, start=start, end=(ind+1)*span)
+                    piano.notes.append(note)
+
+                song.instruments.append(piano)
+                song.write('data/Nottingham/sample{}.mid'.format(song_ind))
+            print('Updated songs to `data/Nottingham/`')
+
+    def export(self, args):
+        args.seq_len = self.seq_len
+        args.vocab_size = self.vocab_size
+        args.start_token = self.start_token
+        args.sampler = self.sample
+        args.evaluator = self.evaluate
+        return args
+
+
 class CDXDataloader(Dataloader):
     def __init__(self, seq_len=19, vocab_size=5000, start_token=0):
         import pandas as pd
@@ -53,6 +124,7 @@ class CDXDataloader(Dataloader):
 
         #self.sentences = np.array(positive_examples)
         dataset = np.array(positive_examples)
+        print(dataset)
         self.dataset = dataset
         #print('Dataset: ', dataset)
         #print('Size: ', dataset.size)
